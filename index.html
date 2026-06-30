@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MIYE — Dashboard de Gestión</title>
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface2: #f0eeea;
+    --border: #e8e5e0;
+    --text-primary: #1a1714;
+    --text-secondary: #6b6560;
+    --text-muted: #9c9590;
+    --accent: #7c2d3e;
+    --accent-light: #f9edef;
+    --accent-mid: #c4566a;
+    --green: #1a6b45;
+    --green-light: #e8f5ee;
+    --blue: #1a4a7c;
+    --blue-light: #e8f0f9;
+    --orange: #854f0b;
+    --orange-light: #fdf3e3;
+    --red: #8b1a1a;
+    --red-light: #fdeaea;
+    --purple: #4a1a7c;
+    --purple-light: #f0e8f9;
+    --shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 0 24px;
+  }
+  .header-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo { font-size: 16px; font-weight: 700; letter-spacing: 0.15em; color: var(--accent); }
+  .logo span { font-weight: 300; letter-spacing: 0.05em; color: var(--text-secondary); font-size: 13px; margin-left: 8px; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .live-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--green); background: var(--green-light); padding: 4px 10px; border-radius: 20px; font-weight: 500; }
+  .live-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .date-label { font-size: 12px; color: var(--text-muted); }
+  .btn-refresh { background: var(--surface); border: 1px solid var(--border); color: var(--text-secondary); font-size: 12px; padding: 6px 14px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s; font-family: inherit; }
+  .btn-refresh:hover { background: var(--surface2); color: var(--text-primary); }
+
+  .nav-tabs { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; overflow-x: auto; scrollbar-width: none; }
+  .nav-tabs::-webkit-scrollbar { display: none; }
+  .nav-tabs-inner { max-width: 1280px; margin: 0 auto; display: flex; gap: 0; }
+  .tab-btn { padding: 12px 18px; font-size: 13px; font-weight: 500; color: var(--text-secondary); border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.15s; font-family: inherit; display: flex; align-items: center; gap: 6px; }
+  .tab-btn:hover { color: var(--text-primary); }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .main { max-width: 1280px; margin: 0 auto; padding: 24px; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+  .card-title { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 16px; }
+
+  .kpi-grid { display: grid; gap: 12px; }
+  .kpi-grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .kpi-grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .kpi-grid-2 { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 900px) { .kpi-grid-4 { grid-template-columns: repeat(2, 1fr); } .kpi-grid-3 { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 540px) { .kpi-grid-4, .kpi-grid-3, .kpi-grid-2 { grid-template-columns: 1fr; } }
+
+  .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); }
+  .kpi-label { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; }
+  .kpi-value { font-size: 26px; font-weight: 700; line-height: 1; color: var(--text-primary); letter-spacing: -0.02em; }
+  .kpi-value.green { color: var(--green); }
+  .kpi-value.blue  { color: var(--blue); }
+  .kpi-value.red   { color: var(--red); }
+  .kpi-value.orange { color: var(--orange); }
+  .kpi-value.accent { color: var(--accent); }
+  .kpi-value.purple { color: var(--purple); }
+  .kpi-sub { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+  .var-pill { display: inline-flex; align-items: center; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 4px; margin-top: 8px; }
+  .var-up   { background: var(--green-light); color: var(--green); }
+  .var-down { background: var(--red-light);   color: var(--red); }
+  .var-neutral { background: var(--surface2); color: var(--text-secondary); }
+
+  .progress-wrap { height: 4px; background: var(--surface2); border-radius: 2px; margin-top: 10px; overflow: hidden; }
+  .progress-bar { height: 4px; border-radius: 2px; background: var(--accent); transition: width 0.6s ease; }
+
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .section-title { font-size: 18px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; }
+  .section-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+  .meta-banner { background: linear-gradient(135deg, #fff8f0 0%, #fdeee8 100%); border: 1px solid #f0d0b8; border-radius: var(--radius); padding: 16px 20px; display: flex; align-items: center; gap: 16px; }
+  .meta-banner-icon { font-size: 32px; }
+  .meta-banner-label { font-size: 11px; color: var(--orange); font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; }
+  .meta-banner-val { font-size: 28px; font-weight: 700; color: var(--orange); letter-spacing: -0.02em; }
+  .meta-banner-sub { font-size: 11px; color: var(--text-muted); }
+
+  .rank-list { display: flex; flex-direction: column; gap: 0; }
+  .rank-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .rank-row:last-child { border-bottom: none; }
+  .rank-num { font-size: 12px; color: var(--text-muted); width: 18px; flex-shrink: 0; font-weight: 600; }
+  .rank-name { font-size: 13px; color: var(--text-primary); flex: 1; line-height: 1.3; }
+  .rank-bar-wrap { width: 60px; height: 3px; background: var(--surface2); border-radius: 2px; flex-shrink: 0; }
+  .rank-bar { height: 3px; border-radius: 2px; }
+  .rank-val { font-size: 13px; font-weight: 600; color: var(--text-primary); min-width: 70px; text-align: right; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  @media (max-width: 780px) { .two-col, .three-col { grid-template-columns: 1fr; } }
+
+  .badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+  .badge-red    { background: var(--red-light); color: var(--red); }
+  .badge-orange { background: var(--orange-light); color: var(--orange); }
+  .badge-green  { background: var(--green-light); color: var(--green); }
+  .badge-blue   { background: var(--blue-light); color: var(--blue); }
+  .badge-grey   { background: var(--surface2); color: var(--text-muted); }
+
+  .alert-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); gap: 8px; }
+  .alert-row:last-child { border-bottom: none; }
+  .alert-name { font-size: 12px; color: var(--text-primary); flex: 1; }
+
+  .gw-row { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .gw-row:last-child { border-bottom: none; }
+  .gw-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .gw-name { font-size: 13px; color: var(--text-primary); flex: 1; }
+  .gw-orders { font-size: 11px; color: var(--text-muted); }
+  .gw-amount { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+
+  .log-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .log-item { background: var(--surface2); border-radius: var(--radius-sm); padding: 14px 16px; }
+  .log-item-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; font-weight: 500; }
+  .log-item-val { font-size: 22px; font-weight: 700; color: var(--text-primary); }
+  .log-item-val.orange { color: var(--orange); }
+  .log-item-val.red    { color: var(--red); }
+
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); border-bottom: 1px solid var(--border); background: var(--surface2); }
+  .data-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); color: var(--text-primary); }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--surface2); }
+  .data-table td.num { text-align: right; font-weight: 600; }
+  .data-table td.center { text-align: center; }
+
+  .roas-chip { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 700; }
+  .roas-high { background: var(--green-light); color: var(--green); }
+  .roas-mid  { background: var(--orange-light); color: var(--orange); }
+  .roas-low  { background: var(--red-light); color: var(--red); }
+
+  .source-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .source-row:last-child { border-bottom: none; }
+  .source-channel { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; background: var(--blue-light); color: var(--blue); white-space: nowrap; min-width: 110px; text-align: center; }
+  .source-origin { font-size: 12px; color: var(--text-secondary); flex: 1; }
+  .source-sessions { font-size: 13px; font-weight: 600; color: var(--text-primary); min-width: 60px; text-align: right; }
+  .source-conv { font-size: 12px; color: var(--green); min-width: 60px; text-align: right; font-weight: 600; }
+
+  /* CASHFLOW */
+  .cf-row { display: grid; grid-template-columns: 140px 1fr 1fr 1fr 1fr 1fr 1fr 1fr; gap: 4px; padding: 8px 4px; border-bottom: 1px solid var(--border); font-size: 12px; align-items: center; }
+  .cf-row:last-child { border-bottom: none; }
+  .cf-header { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); background: var(--surface2); border-radius: var(--radius-sm); padding: 8px 4px; }
+  .cf-cell { text-align: right; }
+  .cf-cell.date { text-align: left; font-weight: 500; color: var(--text-secondary); }
+  .cf-pos { color: var(--green); font-weight: 700; }
+  .cf-neg { color: var(--red); font-weight: 700; }
+
+  /* CUENTA BANCARIA CARD */
+  .cuenta-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 0; box-shadow: var(--shadow); overflow: hidden; margin-bottom: 16px; }
+  .cuenta-header { padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+  .cuenta-nombre { font-size: 13px; font-weight: 700; }
+  .cuenta-gateway { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .cuenta-total { font-size: 20px; font-weight: 700; }
+  .cuenta-body { padding: 0; }
+  .cuenta-row { display: grid; grid-template-columns: 120px 1fr; gap: 8px; padding: 8px 20px; border-bottom: 1px solid var(--border); font-size: 12px; align-items: center; }
+  .cuenta-row:last-child { border-bottom: none; }
+  .cuenta-fecha { color: var(--text-secondary); font-weight: 500; }
+  .cuenta-monto { font-weight: 600; text-align: right; }
+
+  .loading { display: flex; align-items: center; gap: 12px; padding: 60px 20px; justify-content: center; color: var(--text-muted); font-size: 14px; }
+  .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-box { background: var(--red-light); border: 1px solid #f0b0b0; border-radius: var(--radius); padding: 20px 24px; color: var(--red); font-size: 13px; }
+
+  .fin-table { width: 100%; border-collapse: collapse; font-size: 12px; overflow-x: auto; display: block; }
+  .fin-table th { padding: 8px 12px; background: var(--accent); color: white; font-weight: 600; text-align: right; white-space: nowrap; position: sticky; top: 0; }
+  .fin-table th:first-child { text-align: left; position: sticky; left: 0; z-index: 2; }
+  .fin-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+  .fin-table td:first-child { text-align: left; font-weight: 500; background: var(--surface); position: sticky; left: 0; }
+  .fin-table .row-header td { background: var(--surface2); font-weight: 700; }
+  .fin-table .row-result td { background: var(--blue-light); font-weight: 700; color: var(--blue); }
+  .fin-table .row-final td { background: var(--purple-light); font-weight: 700; color: var(--purple); }
+  .fin-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+
+  .mt-16 { margin-top: 16px; }
+  .mt-12 { margin-top: 12px; }
+  .mb-16 { margin-bottom: 16px; }
+  .gap-16 { gap: 16px; }
+
+  .empty-state { text-align: center; padding: 32px 20px; color: var(--text-muted); font-size: 13px; font-style: italic; }
+/* MOBILE NAV */
+.mobile-menu-btn { display: none; }
+.mobile-menu-overlay { display: none; }
+
+@media (max-width: 768px) {
+  .nav-tabs { display: none; }
+  
+  .mobile-menu-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .mobile-menu-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 200;
+  }
+  .mobile-menu-overlay.open { display: block; }
+
+  .mobile-menu-panel {
+    position: fixed;
+    top: 0; right: 0;
+    width: 260px;
+    height: 100%;
+    background: var(--surface);
+    box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+    z-index: 201;
+    padding: 20px 0;
+    overflow-y: auto;
+  }
+  .mobile-menu-header {
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .mobile-menu-close {
+    background: none; border: none; font-size: 20px; cursor: pointer; color: var(--text-muted);
+  }
+  .mobile-tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+    text-align: left;
+  }
+  .mobile-tab-btn:hover { background: var(--surface2); }
+  .mobile-tab-btn.active { color: var(--accent); background: var(--accent-light); font-weight: 600; }
+
+  .header-inner { flex-wrap: wrap; }
+  .main { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div id="login-screen" style="position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center;flex-direction:column;">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:40px;box-shadow:var(--shadow-md);max-width:340px;width:90%;text-align:center;">
+    <div class="logo" style="font-size:20px;margin-bottom:4px;">MIYE</div>
+    <div style="color:var(--text-muted);font-size:13px;margin-bottom:24px;">dashboard de gestión</div>
+    <input type="password" id="login-pass" placeholder="Contraseña" style="width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;margin-bottom:12px;box-sizing:border-box;" onkeypress="if(event.key==='Enter')checkLogin()">
+    <button onclick="checkLogin()" style="width:100%;padding:10px;background:var(--accent);color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">Ingresar</button>
+    <div id="login-error" style="color:var(--red);font-size:12px;margin-top:10px;display:none;">Contraseña incorrecta</div>
+  </div>
+</div>
+
+<div class="header">
+  <div class="header-inner">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div class="logo">MIYE <span>dashboard de gestión</span></div>
+      <div class="live-badge"><div class="live-dot"></div> en vivo</div>
+    </div>
+   <div class="header-right">
+      <div class="date-label" id="date-label"></div>
+      <button class="btn-refresh" onclick="cargarDatos()">↻ actualizar</button>
+      <button class="mobile-menu-btn" onclick="toggleMobileMenu()">☰ Menú</button>
+    </div>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <div class="nav-tabs-inner">
+    <button class="tab-btn active" onclick="showTab('tablero', this)">📊 Tablero</button>
+    <button class="tab-btn" onclick="showTab('ventas', this)">📈 Ventas</button>
+    <button class="tab-btn" onclick="showTab('metaads', this)">📣 Meta Ads</button>
+    <button class="tab-btn" onclick="showTab('clientes', this)">👥 Clientes</button>
+    <button class="tab-btn" onclick="showTab('stock', this)">📦 Stock</button>
+    <button class="tab-btn" onclick="showTab('carritos', this)">🛒 Carritos</button>
+    <button class="tab-btn" onclick="showTab('trafico', this)">🌐 Tráfico</button>
+    <button class="tab-btn" onclick="showTab('financiero', this)">💎 Financiero</button>
+    <button class="tab-btn" onclick="showTab('flujocaja', this)">💰 Flujo de Caja</button>
+  </div>
+</div>
+<div class="mobile-menu-overlay" id="mobile-overlay" onclick="closeMobileMenu()"></div>
+<div class="mobile-menu-panel" id="mobile-panel" style="display:none;">
+  <div class="mobile-menu-header">
+    <strong>Secciones</strong>
+    <button class="mobile-menu-close" onclick="closeMobileMenu()">✕</button>
+  </div>
+  <button class="mobile-tab-btn active" data-tab="tablero" onclick="showMobileTab('tablero', this)">📊 Tablero</button>
+  <button class="mobile-tab-btn" data-tab="ventas" onclick="showMobileTab('ventas', this)">📈 Ventas</button>
+  <button class="mobile-tab-btn" data-tab="metaads" onclick="showMobileTab('metaads', this)">📣 Meta Ads</button>
+  <button class="mobile-tab-btn" data-tab="clientes" onclick="showMobileTab('clientes', this)">👥 Clientes</button>
+  <button class="mobile-tab-btn" data-tab="stock" onclick="showMobileTab('stock', this)">📦 Stock</button>
+  <button class="mobile-tab-btn" data-tab="carritos" onclick="showMobileTab('carritos', this)">🛒 Carritos</button>
+  <button class="mobile-tab-btn" data-tab="trafico" onclick="showMobileTab('trafico', this)">🌐 Tráfico</button>
+  <button class="mobile-tab-btn" data-tab="financiero" onclick="showMobileTab('financiero', this)">💎 Financiero</button>
+  <button class="mobile-tab-btn" data-tab="flujocaja" onclick="showMobileTab('flujocaja', this)">💰 Flujo de Caja</button>
+</div>
+
+<div class="main" id="main-content">
+  <div class="loading"><div class="spinner"></div>Conectando con MIYE...</div>
+</div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbz7I-yA569zz09ZnEKpDQMZapbDz1tBRPHizYG1E3OSwC17cGJ4o3N1zvvNmc_PzhdEjw/exec";
+
+let DATA = null;
+let CURRENT_TAB = 'tablero';
+
+const ars = n => "$ " + Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+const pct = n => (n >= 0 ? "▲ " : "▼ ") + Math.abs(n).toFixed(1) + "%";
+const pctClass = n => n >= 0 ? "var-up" : "var-down";
+const roasClass = r => r >= 10 ? "roas-high" : r >= 3 ? "roas-mid" : "roas-low";
+
+const GW_COLORS = {
+  "Pago Nube": "#7c2d3e",
+  "Mercado Pago": "#009ee3",
+  "GOcuotas": "#f97316",
+  "Nave": "#1a6b45",
+  "Transferencia o depósito bancario": "#1a4a7c",
+  "MODO": "#e11d48",
+  "default": "#9ca3af"
+};
+
+// Mapeo gateway → cuenta de acreditación
+const CUENTAS = {
+  "Pago Nube":                             { nombre: "BBVA Francés — Rafael Collazzo",    color: "#7c2d3e",  bg: "#f9edef" },
+  "Mercado Pago":                          { nombre: "MP Valentina Castaño",              color: "#009ee3",  bg: "#e3f4fb" },
+  "Nave":                                  { nombre: "Bco Galicia — Sebastián Castaño",   color: "#1a6b45",  bg: "#e8f5ee" },
+  "Transferencia o depósito bancario":     { nombre: "MP Adair Castaño",                  color: "#4a1a7c",  bg: "#f0e8f9" },
+  "GOcuotas":                              { nombre: "Echeq — Rafael Collazzo",            color: "#854f0b",  bg: "#fdf3e3" },
+  "6 Cuotas sin Interés con Tarjetas BBVA":{ nombre: "Echeq — Rafael Collazzo",           color: "#854f0b",  bg: "#fdf3e3" },
+};
+
+function setDate() {
+  const hoy = new Date();
+  const dias = ["domingo","lunes","martes","miércoles","jueves","viernes","sábado"];
+  const meses = ["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+  document.getElementById("date-label").textContent =
+    dias[hoy.getDay()] + " " + hoy.getDate() + " " + meses[hoy.getMonth()] + " " + hoy.getFullYear();
+}
+
+function showTab(tab, btn) {
+  CURRENT_TAB = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (DATA) renderTab(tab, DATA);
+}
+function toggleMobileMenu() {
+  document.getElementById('mobile-overlay').classList.add('open');
+  document.getElementById('mobile-panel').style.display = 'block';
+}
+function closeMobileMenu() {
+  document.getElementById('mobile-overlay').classList.remove('open');
+  document.getElementById('mobile-panel').style.display = 'none';
+}
+function showMobileTab(tab, btn) {
+  CURRENT_TAB = tab;
+  document.querySelectorAll('.mobile-tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (DATA) renderTab(tab, DATA);
+  closeMobileMenu();
+}
+
+function renderTab(tab, d) {
+  const el = document.getElementById('main-content');
+  switch(tab) {
+    case 'tablero':    el.innerHTML = renderTablero(d); break;
+    case 'ventas':     el.innerHTML = renderVentas(d); break;
+    case 'metaads':    el.innerHTML = renderMetaAds(d); break;
+    case 'clientes':   el.innerHTML = renderClientes(d); break;
+    case 'stock':      el.innerHTML = renderStock(d); break;
+    case 'carritos':   el.innerHTML = renderCarritos(d); break;
+    case 'trafico':    el.innerHTML = renderTrafico(d); break;
+    case 'financiero': el.innerHTML = renderFinanciero(d); break;
+    case 'flujocaja':  el.innerHTML = renderFlujoCaja(d); break;
+  }
+}
+
+// ── TABLERO ──
+function renderTablero(d) {
+  const porcMes = Math.round(d.mes.dia / d.mes.diasEnMes * 100);
+  const tieneGasto = d.ayer.gastoPautaUSD > 0;
+  return `
+    <div class="section-header">
+      <div>
+        <div class="section-title">Tablero ejecutivo</div>
+        <div class="section-sub">Vista general del negocio · actualizado ${d.actualizadoEl}</div>
+      </div>
+    </div>
+
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">AYER — ${d.ayer.fecha}</div>
+    <div class="kpi-grid kpi-grid-4 mb-16">
+      <div class="kpi-card"><div class="kpi-label">Ventas brutas</div><div class="kpi-value">${ars(d.ayer.bruto)}</div><div class="kpi-sub">ARS</div></div>
+      <div class="kpi-card"><div class="kpi-label">Ingresos netos</div><div class="kpi-value green">${ars(d.ayer.neto)}</div><div class="kpi-sub">después de comisiones</div></div>
+      <div class="kpi-card"><div class="kpi-label">Órdenes</div><div class="kpi-value blue">${d.ayer.ordenes}</div><div class="kpi-sub">pedidos procesados</div></div>
+      <div class="kpi-card"><div class="kpi-label">Ticket promedio</div><div class="kpi-value accent">${ars(d.ayer.ticket)}</div><div class="kpi-sub">ARS por orden</div></div>
+    </div>
+
+    ${tieneGasto ? `<div class="meta-banner mb-16"><div class="meta-banner-icon">📣</div><div><div class="meta-banner-label">Gasto pauta Meta — ayer</div><div class="meta-banner-val">USD ${d.ayer.gastoPautaUSD.toFixed(2)}</div><div class="meta-banner-sub">Meta Ads · actualizado automáticamente</div></div></div>` : ""}
+
+    <div class="divider"></div>
+
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">MES ACTUAL — ${d.mes.periodo} · día ${d.mes.dia} de ${d.mes.diasEnMes}</div>
+    <div class="kpi-grid kpi-grid-4 mb-16">
+      <div class="kpi-card"><div class="kpi-label">Ventas brutas</div><div class="kpi-value">${ars(d.mes.bruto)}</div><div class="kpi-sub">ARS acumulado</div></div>
+      <div class="kpi-card"><div class="kpi-label">Ingresos netos</div><div class="kpi-value green">${ars(d.mes.neto)}</div><div class="kpi-sub">después de comisiones</div></div>
+      <div class="kpi-card"><div class="kpi-label">Órdenes del mes</div><div class="kpi-value blue">${d.mes.ordenes}</div><div class="kpi-sub">ticket prom. ${ars(d.mes.ticket)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">Proyección fin de mes</div><div class="kpi-value orange">${ars(d.mes.proyeccion)}</div><div class="progress-wrap"><div class="progress-bar" style="width:${porcMes}%"></div></div><div class="kpi-sub" style="margin-top:6px;">${porcMes}% del mes</div></div>
+    </div>
+
+    <div class="kpi-grid kpi-grid-2 mb-16">
+      <div class="kpi-card"><div class="kpi-label">vs mes anterior</div><div class="kpi-value ${d.mes.varMesAnt >= 0 ? 'green' : 'red'}">${pct(d.mes.varMesAnt)}</div><div class="kpi-sub">mismo período: ${ars(d.mes.brutoMesAnt)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">vs mismo mes año anterior</div><div class="kpi-value ${d.mes.varAñoAnt >= 0 ? 'green' : 'red'}">${pct(d.mes.varAñoAnt)}</div><div class="kpi-sub">mismo período: ${ars(d.mes.brutoAñoAnt)}</div></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="two-col">
+      <div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">TOP 5 PRODUCTOS DEL MES</div>
+        <div class="card"><div class="rank-list">${rankList(d.topProductos.map(p=>[p.nombre, p.unidades+" uds"]), "#7c2d3e")}</div></div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">MEDIOS DE PAGO</div>
+        <div class="card">
+          ${d.topGateways.map(g => `<div class="gw-row"><div class="gw-dot" style="background:${GW_COLORS[g.gateway]||GW_COLORS.default}"></div><div style="flex:1"><div class="gw-name">${g.gateway}</div><div class="gw-orders">${g.ordenes} órdenes</div></div><div class="gw-amount">${ars(g.bruto)}</div></div>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="two-col">
+      <div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">LOGÍSTICA</div>
+        <div class="log-grid">
+          <div class="log-item"><div class="log-item-label">Envíos</div><div class="log-item-val">${d.logistica.envios.toLocaleString("es-AR")}</div></div>
+          <div class="log-item"><div class="log-item-label">Retiros en local</div><div class="log-item-val">${d.logistica.retiros.toLocaleString("es-AR")}</div></div>
+          <div class="log-item"><div class="log-item-label">Pendientes de pago</div><div class="log-item-val orange">${d.logistica.pendientes}</div></div>
+          <div class="log-item"><div class="log-item-label">Tasa cancelación</div><div class="log-item-val red">${d.logistica.pctCancelacion}%</div></div>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">TOP PROVINCIAS</div>
+        <div class="card"><div class="rank-list">${rankList(d.topProvincias.slice(0,6).map(p=>[p.provincia, p.ordenes+" órdenes"]), "#1a4a7c")}</div></div>
+      </div>
+    </div>
+
+    ${d.mejorDia ? `<div class="divider"></div><div class="card" style="display:flex;align-items:center;gap:16px;"><div style="font-size:32px;">📅</div><div><div style="font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.06em;">Mejor día de la semana (histórico)</div><div style="font-size:20px;font-weight:700;color:var(--text-primary);margin-top:4px;">${d.mejorDia.dia} — ${d.mejorDia.ordenes.toLocaleString("es-AR")} órdenes</div></div></div>` : ""}
+  `;
+}
+
+// ── VENTAS ──
+function renderVentas(d) {
+  const ventas = d.ventas || {};
+  const meses = ventas.mensual || [];
+  const semestres = ventas.semestral || [];
+  const anios = ventas.anual || [];
+  return `
+    <div class="section-header"><div><div class="section-title">Ventas</div><div class="section-sub">Histórico mensual, semestral y anual</div></div></div>
+
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">RESUMEN ANUAL</div>
+    <div class="kpi-grid kpi-grid-3 mb-16">
+      ${anios.map(a => `<div class="kpi-card"><div class="kpi-label">${a.anio}</div><div class="kpi-value">${ars(a.ventas)}</div><div class="kpi-sub">${a.ordenes.toLocaleString("es-AR")} órdenes · ticket ${ars(a.ticket)}</div>${a.var ? `<div class="var-pill ${pctClass(a.var)}">${pct(a.var)} vs año ant.</div>` : ""}</div>`).join("")}
+    </div>
+
+    <div class="divider"></div>
+
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">RESUMEN SEMESTRAL</div>
+    <div class="card mb-16">
+      <table class="data-table">
+        <thead><tr><th>Semestre</th><th style="text-align:right">Ventas brutas</th><th style="text-align:right">Ingresos netos</th><th style="text-align:center">Órdenes</th><th style="text-align:right">Ticket prom.</th></tr></thead>
+        <tbody>${semestres.map(s => `<tr><td><strong>${s.sem}</strong></td><td class="num">${ars(s.ventas)}</td><td class="num" style="color:var(--green)">${ars(s.neto)}</td><td class="center">${s.ordenes.toLocaleString("es-AR")}</td><td class="num" style="color:var(--purple)">${ars(s.ticket)}</td></tr>`).join("")}</tbody>
+      </table>
+    </div>
+
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">DETALLE MENSUAL</div>
+    <div class="card">
+      <table class="data-table">
+        <thead><tr><th>Período</th><th style="text-align:right">Ventas brutas</th><th style="text-align:right">Ingresos netos</th><th style="text-align:center">Órdenes</th><th style="text-align:right">Ticket</th><th style="text-align:center">Var. mes ant.</th></tr></thead>
+        <tbody>${meses.slice().reverse().map(m => `<tr><td><strong>${m.periodo}</strong></td><td class="num">${ars(m.ventas)}</td><td class="num" style="color:var(--green)">${ars(m.neto)}</td><td class="center">${m.ordenes}</td><td class="num" style="color:var(--purple)">${ars(m.ticket)}</td><td class="center">${m.varMesAnt !== null ? `<span class="var-pill ${pctClass(m.varMesAnt)}">${pct(m.varMesAnt)}</span>` : '<span style="color:var(--text-muted)">—</span>'}</td></tr>`).join("")}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ── META ADS ──
+function renderMetaAds(d) {
+  const meta = d.meta || {};
+  const mensual = meta.mensual || [];
+  const diario  = meta.diario  || [];
+  return `
+    <div class="section-header"><div><div class="section-title">Meta Ads vs Ventas</div><div class="section-sub">ROAS, CPO y eficiencia publicitaria</div></div></div>
+
+    <div class="kpi-grid kpi-grid-4 mb-16">
+      <div class="kpi-card"><div class="kpi-label">Gasto total Meta (ARS)</div><div class="kpi-value red">${ars(meta.totalGastoARS || 0)}</div><div class="kpi-sub">USD ${(meta.totalGastoUSD||0).toFixed(2)}</div></div>
+      <div class="kpi-card"><div class="kpi-label">ROAS global</div><div class="kpi-value green">${(meta.roasGlobal||0).toFixed(1)}x</div><div class="kpi-sub">retorno sobre inversión</div></div>
+      <div class="kpi-card"><div class="kpi-label">Costo por orden (CPO)</div><div class="kpi-value accent">${ars(meta.cpoGlobal||0)}</div><div class="kpi-sub">ARS por venta generada</div></div>
+      <div class="kpi-card"><div class="kpi-label">Ventas totales</div><div class="kpi-value blue">${ars(meta.totalVentas||0)}</div><div class="kpi-sub">${(meta.totalOrdenes||0).toLocaleString("es-AR")} órdenes</div></div>
+    </div>
+
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">COMPARATIVO MENSUAL</div>
+    <div class="card mb-16">
+      <table class="data-table">
+        <thead><tr><th>Mes</th><th style="text-align:right">Ventas ARS</th><th style="text-align:center">Órdenes</th><th style="text-align:right">Gasto Meta ARS</th><th style="text-align:right">Gasto USD</th><th style="text-align:center">ROAS</th><th style="text-align:right">CPO ARS</th><th style="text-align:center">CTR%</th></tr></thead>
+        <tbody>${mensual.map(m => `<tr><td><strong>${m.mes}</strong></td><td class="num">${ars(m.ventas)}</td><td class="center">${m.ordenes}</td><td class="num" style="color:var(--red)">${m.gastoARS > 0 ? ars(m.gastoARS) : "—"}</td><td class="num" style="color:var(--orange)">${m.gastoUSD > 0 ? "USD "+m.gastoUSD : "—"}</td><td class="center"><span class="roas-chip ${roasClass(m.roas)}">${m.roas > 0 ? m.roas+"x" : "—"}</span></td><td class="num" style="color:var(--purple)">${m.cpo > 0 ? ars(m.cpo) : "—"}</td><td class="center">${m.ctr > 0 ? m.ctr+"%" : "—"}</td></tr>`).join("")}</tbody>
+      </table>
+    </div>
+
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">COMPARATIVO DIARIO — últimos 60 días</div>
+    <div class="card">
+      <table class="data-table">
+        <thead><tr><th>Fecha</th><th style="text-align:right">Ventas ARS</th><th style="text-align:center">Órdenes</th><th style="text-align:right">Gasto Meta ARS</th><th style="text-align:right">Gasto USD</th><th style="text-align:center">ROAS</th><th style="text-align:center">Impresiones</th><th style="text-align:center">Clicks</th></tr></thead>
+        <tbody>${diario.map(d2 => `<tr><td><strong>${d2.fecha}</strong></td><td class="num">${ars(d2.ventas)}</td><td class="center">${d2.ordenes}</td><td class="num" style="color:var(--red)">${d2.gastoARS > 0 ? ars(d2.gastoARS) : "—"}</td><td class="num" style="color:var(--orange)">${d2.gastoUSD > 0 ? "USD "+d2.gastoUSD : "—"}</td><td class="center"><span class="roas-chip ${roasClass(d2.roas)}">${d2.roas > 0 ? d2.roas+"x" : "—"}</span></td><td class="center" style="color:var(--text-muted)">${d2.impresiones > 0 ? d2.impresiones.toLocaleString("es-AR") : "—"}</td><td class="center" style="color:var(--text-muted)">${d2.clicks > 0 ? d2.clicks : "—"}</td></tr>`).join("")}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ── CLIENTES ──
+function renderClientes(d) {
+  const cl = d.clientes || {};
+  // top20 y porMes vienen en el JSON de clientes
+  const top20  = cl.top20  || [];
+  const porMes = cl.porMes || [];
+  return `
+    <div class="section-header"><div><div class="section-title">Análisis de clientes</div><div class="section-sub">LTV, recurrencia y segmentación desde enero 2025</div></div></div>
+
+    <div class="kpi-grid kpi-grid-4 mb-16">
+      <div class="kpi-card"><div class="kpi-label">Clientes únicos</div><div class="kpi-value blue">${(cl.totalClientes||0).toLocaleString("es-AR")}</div><div class="kpi-sub">desde enero 2025</div></div>
+      <div class="kpi-card"><div class="kpi-label">Recurrentes (2+ compras)</div><div class="kpi-value green">${(cl.recurrentes||0).toLocaleString("es-AR")}</div><div class="kpi-sub">${cl.pctRecurrencia||0}% del total</div></div>
+      <div class="kpi-card"><div class="kpi-label">LTV promedio</div><div class="kpi-value accent">${ars(cl.ltv||0)}</div><div class="kpi-sub">gasto promedio por cliente</div></div>
+      <div class="kpi-card"><div class="kpi-label">Frecuencia media</div><div class="kpi-value purple">${cl.frecuencia||0} órdenes</div><div class="kpi-sub">por cliente</div></div>
+    </div>
+
+    <div class="kpi-grid kpi-grid-2 mb-16">
+      <div class="kpi-card"><div class="kpi-label">Una sola compra — potencial reactivación</div><div class="kpi-value orange">${(cl.unaSolaVez||0).toLocaleString("es-AR")}</div><div class="kpi-sub">clientes a reactivar</div></div>
+      <div class="kpi-card"><div class="kpi-label">Inactivos +90 días</div><div class="kpi-value red">${(cl.inactivos90||0).toLocaleString("es-AR")}</div><div class="kpi-sub">sin compras recientes</div></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="two-col">
+      <div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">TOP 20 CLIENTES POR GASTO</div>
+        <div class="card">
+          ${top20.length === 0 ? '<div class="empty-state">Sin datos</div>' : `
+          <table class="data-table">
+            <thead><tr><th>Cliente</th><th style="text-align:center">Órdenes</th><th style="text-align:right">Total gastado</th><th>Última compra</th></tr></thead>
+            <tbody>${top20.map(c => `<tr><td>${c.nombre}</td><td class="center">${c.ordenes}</td><td class="num" style="color:var(--green)">${ars(c.totalGastado)}</td><td style="color:var(--text-muted);font-size:11px">${c.ultimaCompra}</td></tr>`).join("")}</tbody>
+          </table>`}
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">NUEVOS VS RECURRENTES POR MES</div>
+        <div class="card">
+          ${porMes.length === 0 ? '<div class="empty-state">Sin datos</div>' : `
+          <table class="data-table">
+            <thead><tr><th>Mes</th><th style="text-align:center">Nuevos</th><th style="text-align:center">Recurrentes</th></tr></thead>
+            <tbody>${porMes.slice(0,12).map(m => `<tr><td><strong>${m.mes}</strong></td><td class="center" style="color:var(--blue)">${m.nuevos}</td><td class="center" style="color:var(--green)">${m.recurrentes}</td></tr>`).join("")}</tbody>
+          </table>`}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ── STOCK ──
+function renderStock(d) {
+  const stockData  = d.stockTodos  || [];
+  const stockBajo  = d.stockBajo   || [];  // 1-6 uds
+  const stockTop10 = d.stockTop5   || [];  // top 10 mayor stock
+  const sinStock   = d.stockSinStock || []; // 0 uds categoría Nueva Coleccion
+
+  return `
+    <div class="section-header"><div><div class="section-title">Stock y alertas</div><div class="section-sub">Inventario actual con alertas de reposición</div></div></div>
+
+    <div class="kpi-grid kpi-grid-2 mb-16">
+      <div class="kpi-card">
+        <div class="kpi-label">Poco stock (1 – 6 uds)</div>
+        <div class="kpi-value orange">${stockBajo.length}</div>
+        <div class="kpi-sub">modelos con reposición próxima</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Sin stock — Nueva Colección</div>
+        <div class="kpi-value red">${sinStock.length}</div>
+        <div class="kpi-sub">modelos agotados de nueva colección</div>
+      </div>
+    </div>
+
+    <div class="two-col mb-16">
+      <div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--orange);margin-bottom:10px;">🟡 POCO STOCK — ATENCIÓN (1 a 6 uds)</div>
+        <div class="card">
+          ${stockBajo.length === 0 ? '<div class="empty-state">Sin modelos en esta categoría</div>' :
+          stockBajo.map(s => `<div class="alert-row"><div class="alert-name">${s.modelo}</div><span class="badge badge-orange">${s.stock} uds</span></div>`).join("")}
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--red);margin-bottom:10px;">❌ SIN STOCK — NUEVA COLECCIÓN</div>
+        <div class="card">
+          ${sinStock.length === 0 ? '<div class="empty-state">Sin modelos agotados en nueva colección 🎉</div>' :
+          sinStock.map(s => `<div class="alert-row"><div class="alert-name">${s.modelo}</div><span class="badge badge-grey">Sin stock</span></div>`).join("")}
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">🏆 TOP 10 MAYOR STOCK</div>
+    <div class="card">
+      <div class="rank-list">
+        ${rankList((stockTop10.slice(0,10)).map(s=>[s.modelo, s.stock+" uds"]), "#1a6b45")}
+      </div>
+    </div>
+  `;
+}
+
+// ── CARRITOS ──
+function renderCarritos(d) {
+  const ca = d.carritos || {};
+  const porDia = ca.porDia || [];
+  return `
+    <div class="section-header"><div><div class="section-title">Carritos abandonados</div><div class="section-sub">Últimos 90 días · oportunidades de recuperación</div></div></div>
+
+    <div class="kpi-grid kpi-grid-3 mb-16">
+      <div class="kpi-card"><div class="kpi-label">Total carritos abandonados</div><div class="kpi-value red">${ca.total||0}</div><div class="kpi-sub">en los últimos 90 días</div></div>
+      <div class="kpi-card"><div class="kpi-label">Monto total no cobrado</div><div class="kpi-value orange">${ars(ca.montoTotal||0)}</div><div class="kpi-sub">ARS sin recuperar</div></div>
+      <div class="kpi-card"><div class="kpi-label">Ticket promedio abandonado</div><div class="kpi-value accent">${ars(ca.montoPromedio||0)}</div><div class="kpi-sub">ARS por carrito</div></div>
+    </div>
+
+    <div class="two-col">
+      <div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">TOP PRODUCTOS ABANDONADOS</div>
+        <div class="card">
+          <table class="data-table">
+            <thead><tr><th>Producto</th><th style="text-align:center">Veces</th><th style="text-align:right">Monto est.</th></tr></thead>
+            <tbody>${(ca.topProductos||[]).map(p => `<tr><td>${p.nombre}</td><td class="center">${p.veces}</td><td class="num" style="color:var(--orange)">${ars(p.monto)}</td></tr>`).join("")}</tbody>
+          </table>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">POR DÍA</div>
+        <div class="card">
+          ${porDia.length === 0 ? '<div class="empty-state">Sin datos por día</div>' : `
+          <table class="data-table">
+            <thead><tr><th>Fecha</th><th style="text-align:center">Cantidad</th><th style="text-align:right">Monto</th></tr></thead>
+            <tbody>${porDia.slice(0,20).map(d2 => `<tr><td>${d2.fecha}</td><td class="center" style="color:var(--red)">${d2.cantidad}</td><td class="num" style="color:var(--orange)">${ars(d2.monto)}</td></tr>`).join("")}</tbody>
+          </table>`}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ── TRÁFICO GA4 ──
+function renderTrafico(d) {
+  const ga4 = d.ga4 || {};
+  return `
+    <div class="section-header"><div><div class="section-title">Tráfico y fuentes</div><div class="section-sub">Google Analytics 4 · últimos 30 días</div></div></div>
+
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">FUENTES DE TRÁFICO</div>
+    <div class="card mb-16">
+      ${(ga4.fuentes||[]).map(f => `<div class="source-row"><div class="source-channel">${f.canal}</div><div class="source-origin">${f.fuente} / ${f.medio}</div><div class="source-sessions">${f.sesiones.toLocaleString("es-AR")} ses.</div><div class="source-conv">${f.conversiones} conv.</div></div>`).join("")}
+    </div>
+
+    ${(ga4.ia||[]).length > 0 ? `
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">🤖 TRÁFICO DESDE IA</div>
+    <div class="card mb-16">
+      <table class="data-table">
+        <thead><tr><th>Fuente IA</th><th style="text-align:center">Sesiones</th><th style="text-align:center">Conversiones</th></tr></thead>
+        <tbody>${ga4.ia.map(i => `<tr><td>${i.fuente}</td><td class="center" style="color:var(--blue)">${i.sesiones}</td><td class="center" style="color:var(--green)">${i.conversiones}</td></tr>`).join("")}</tbody>
+      </table>
+    </div>` : `<div class="card mb-16" style="color:var(--text-muted);font-size:13px;font-style:italic;padding:20px;">Sin tráfico de IA detectado en los últimos 30 días</div>`}
+  `;
+}
+
+// ── FINANCIERO ──
+function renderFinanciero(d) {
+  const fin = d.financiero || {};
+  const meses = fin.meses || [];
+  const trimestres = fin.trimestres || [];
+  return `
+    <div class="section-header"><div><div class="section-title">Estado financiero</div><div class="section-sub">P&L con retenciones reales · Pago Nube + NAVE + Meta Ads</div></div></div>
+
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">RESUMEN TRIMESTRAL</div>
+    <div class="kpi-grid kpi-grid-3 mb-16">
+      ${trimestres.slice(-4).map(t => `<div class="kpi-card"><div class="kpi-label">${t.trim}</div><div class="kpi-value">${ars(t.ventas)}</div><div class="kpi-sub">neto: ${ars(t.neto)}</div><div class="var-pill ${t.resultado >= 0 ? 'var-up' : 'var-down'}" style="margin-top:8px">Resultado: ${ars(t.resultado)}</div></div>`).join("")}
+    </div>
+
+    <div class="divider"></div>
+
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">ESTADO DE RESULTADOS MENSUAL</div>
+    <div class="fin-wrap">
+      <table class="fin-table">
+        <thead><tr><th>Concepto</th>${meses.slice(-6).map(m=>`<th>${m.mes}</th>`).join("")}</tr></thead>
+        <tbody>
+          <tr class="row-header"><td>💰 Ventas brutas</td>${meses.slice(-6).map(m=>`<td>${ars(m.ventas)}</td>`).join("")}</tr>
+          <tr><td style="padding-left:24px;color:var(--red)">Comisiones gateways</td>${meses.slice(-6).map(m=>`<td style="color:var(--red)">(${ars(m.comisiones)})</td>`).join("")}</tr>
+          <tr><td style="padding-left:24px;color:var(--red)">Retenciones IIBB</td>${meses.slice(-6).map(m=>`<td style="color:var(--red)">(${ars(m.iibb)})</td>`).join("")}</tr>
+          <tr><td style="padding-left:24px;color:var(--red)">Retenciones SIRTAC</td>${meses.slice(-6).map(m=>`<td style="color:var(--red)">(${ars(m.sirtac)})</td>`).join("")}</tr>
+          <tr class="row-result"><td>✅ Ingresos netos reales</td>${meses.slice(-6).map(m=>`<td>${ars(m.ingresoNeto)}</td>`).join("")}</tr>
+          <tr><td style="padding-left:24px;color:var(--red)">Costo mercadería</td>${meses.slice(-6).map(m=>`<td style="color:var(--red)">(${ars(m.costoMercaderia)})</td>`).join("")}</tr>
+          <tr class="row-header"><td>📊 Ganancia bruta</td>${meses.slice(-6).map(m=>`<td>${ars(m.gananciaBruta)}</td>`).join("")}</tr>
+          <tr><td style="padding-left:24px;color:var(--text-muted)">Gastos fijos</td>${meses.slice(-6).map(m=>`<td style="color:var(--text-secondary)">(${ars(m.gastosFijos)})</td>`).join("")}</tr>
+          <tr><td style="padding-left:24px;color:var(--text-muted)">Pauta Meta</td>${meses.slice(-6).map(m=>`<td style="color:var(--text-secondary)">(${ars(m.pautaMeta)})</td>`).join("")}</tr>
+          <tr><td style="padding-left:24px;color:var(--text-muted)">Gastos variables</td>${meses.slice(-6).map(m=>`<td style="color:var(--text-secondary)">(${ars(m.gastosVariables)})</td>`).join("")}</tr>
+          <tr class="row-result"><td>⭐ Resultado operativo</td>${meses.slice(-6).map(m=>`<td>${ars(m.resultadoOperativo)}</td>`).join("")}</tr>
+          <tr><td style="padding-left:24px;color:var(--purple)">Retiros de dueños</td>${meses.slice(-6).map(m=>`<td style="color:var(--purple)">(${ars(m.retirosDuenos)})</td>`).join("")}</tr>
+          <tr class="row-final"><td>💎 Resultado final</td>${meses.slice(-6).map(m=>`<td>${ars(m.resultadoFinal)}</td>`).join("")}</tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+// ── FLUJO DE CAJA ──
+function renderFlujoCaja(d) {
+  const cf = d.flujoCaja || {};
+  const alertas   = cf.alertas  || [];
+  const dias      = cf.dias     || [];
+  const cuentas   = cf.cuentas  || {};
+
+  // Resumen totales
+  const totalEntradas = (cf.totalEntradasPN||0) + (cf.totalEntradasMP||0) + (cf.totalEntradasCheques||0);
+
+  return `
+    <div class="section-header"><div><div class="section-title">Flujo de caja</div><div class="section-sub">Proyección 30 días · entradas por cuenta y salidas reales</div></div></div>
+
+    <!-- KPIs resumen -->
+    <div class="kpi-grid kpi-grid-4 mb-16">
+      <div class="kpi-card">
+        <div class="kpi-label">Entradas Pago Nube (30d)</div>
+        <div class="kpi-value" style="color:#7c2d3e">${ars(cf.totalEntradasPN||0)}</div>
+        <div class="kpi-sub">BBVA Francés — Rafael Collazzo</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Entradas Mercado Pago (30d)</div>
+        <div class="kpi-value" style="color:#009ee3">${ars(cf.totalEntradasMP||0)}</div>
+        <div class="kpi-sub">MP Valentina Castaño</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Entradas GOcuotas (30d)</div>
+        <div class="kpi-value blue">${ars(cf.totalEntradasCheques||0)}</div>
+        <div class="kpi-sub">Echeq — Rafael Collazzo</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Cheques a pagar (30d)</div>
+        <div class="kpi-value red">${ars(cf.totalSalidasCheques||0)}</div>
+        <div class="kpi-sub">compromisos pendientes</div>
+      </div>
+    </div>
+
+    <!-- Alerta cheques 7 días -->
+    ${alertas.length > 0 ? `
+    <div style="background:var(--red-light);border:1px solid #f0c0c0;border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:10px;">⚠️ CHEQUES A VENCER EN LOS PRÓXIMOS 7 DÍAS</div>
+      ${alertas.map(a => `
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #f0c0c0;">
+          <span style="font-size:13px;font-weight:600;color:var(--red)">${a.fecha}</span>
+          <span style="font-size:13px;font-weight:700;color:var(--red)">${ars(a.monto)}</span>
+        </div>`).join("")}
+    </div>` : `
+    <div style="background:var(--green-light);border:1px solid #b0ddc0;border-radius:var(--radius);padding:14px 20px;margin-bottom:16px;color:var(--green);font-size:13px;font-weight:600;">
+      ✅ Sin cheques a vencer en los próximos 7 días
+    </div>`}
+
+    <div class="divider"></div>
+
+    <!-- SECCIÓN POR CUENTA -->
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:14px;">💳 ENTRADAS PROYECTADAS POR CUENTA</div>
+
+    ${Object.entries(CUENTAS).map(([gw, info]) => {
+      const movs = (cuentas[gw] || []);
+      if (movs.length === 0) return "";
+      const total = movs.reduce((s, m) => s + m.monto, 0);
+      return `
+      <div class="cuenta-card">
+        <div class="cuenta-header" style="background:${info.bg}">
+          <div>
+            <div class="cuenta-nombre" style="color:${info.color}">${info.nombre}</div>
+            <div class="cuenta-gateway">${gw}</div>
+          </div>
+          <div class="cuenta-total" style="color:${info.color}">${ars(total)}</div>
+        </div>
+        <div class="cuenta-body">
+          ${movs.slice(0,15).map(m => `
+            <div class="cuenta-row">
+              <div class="cuenta-fecha">${m.fecha}</div>
+              <div class="cuenta-monto" style="color:${info.color}">${ars(m.monto)}</div>
+            </div>`).join("")}
+          ${movs.length > 15 ? `<div style="padding:8px 20px;font-size:11px;color:var(--text-muted)">+ ${movs.length - 15} entradas más...</div>` : ""}
+        </div>
+      </div>`;
+    }).join("")}
+
+    <div class="divider"></div>
+
+    <!-- TABLA DÍA A DÍA -->
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">PROYECCIÓN DÍA A DÍA — CONSOLIDADO</div>
+    <div class="card" style="overflow-x:auto;">
+      <div class="cf-row cf-header">
+        <div>Fecha</div>
+        <div style="text-align:right">Ent. PN</div>
+        <div style="text-align:right">Ent. MP</div>
+        <div style="text-align:right">Ent. Cheques</div>
+        <div style="text-align:right">Total entradas</div>
+        <div style="text-align:right">Cheques a pagar</div>
+        <div style="text-align:right">Gastos fijos</div>
+        <div style="text-align:right">Saldo del día</div>
+      </div>
+      ${dias.map(d2 => `
+        <div class="cf-row">
+          <div class="cf-cell date">${d2.fecha}</div>
+          <div class="cf-cell" style="color:#7c2d3e">${d2.entradaPN > 0 ? ars(d2.entradaPN) : "—"}</div>
+          <div class="cf-cell" style="color:#009ee3">${(d2.entradaMP||0) > 0 ? ars(d2.entradaMP) : "—"}</div>
+          <div class="cf-cell" style="color:var(--blue)">${d2.entradaCheques > 0 ? ars(d2.entradaCheques) : "—"}</div>
+          <div class="cf-cell" style="color:var(--text-primary);font-weight:600">${d2.totalEntradas > 0 ? ars(d2.totalEntradas) : "—"}</div>
+          <div class="cf-cell" style="color:var(--red)">${d2.salidaCheques > 0 ? ars(d2.salidaCheques) : "—"}</div>
+          <div class="cf-cell" style="color:var(--orange)">${ars(d2.salidaFijos)}</div>
+          <div class="cf-cell ${d2.saldo >= 0 ? 'cf-pos' : 'cf-neg'}">${ars(d2.saldo)}</div>
+        </div>`).join("")}
+    </div>
+  `;
+}
+
+// ── HELPERS ──
+function rankList(items, color) {
+  if (!items || items.length === 0) return '<div class="empty-state">Sin datos</div>';
+  const maxVal = Math.max(...items.map(i => parseInt(i[1]) || 0));
+  return items.map((item, i) => `
+    <div class="rank-row">
+      <span class="rank-num">${i+1}</span>
+      <span class="rank-name">${item[0]}</span>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${maxVal > 0 ? Math.round((parseInt(item[1])||0)/maxVal*100) : 0}%;background:${color}"></div></div>
+      <span class="rank-val">${item[1]}</span>
+    </div>`).join("");
+}
+
+async function cargarDatos() {
+  document.getElementById("main-content").innerHTML = '<div class="loading"><div class="spinner"></div>Actualizando datos...</div>';
+  try {
+    const resp = await fetch(API_URL);
+    if (!resp.ok) throw new Error("Error " + resp.status);
+    DATA = await resp.json();
+    renderTab(CURRENT_TAB, DATA);
+  } catch(err) {
+    document.getElementById("main-content").innerHTML = `
+      <div class="error-box">
+        <strong>No se pudo conectar con el servidor.</strong><br>
+        Verificá que el script de Apps Script esté publicado como Web App.<br>
+        <small style="opacity:.7;margin-top:4px;display:block;">${err.message}</small>
+      </div>`;
+  }
+}
+
+// ── LOGIN ──
+const SITE_PASSWORD = "miye2026"; // CAMBIAR esta clave
+
+function checkLogin() {
+  const input = document.getElementById('login-pass').value;
+  if (input === SITE_PASSWORD) {
+    document.getElementById('login-screen').style.display = 'none';
+    sessionStorage.setItem('miye_auth', 'ok');
+    setDate();
+    cargarDatos();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+
+if (sessionStorage.getItem('miye_auth') === 'ok') {
+  document.getElementById('login-screen').style.display = 'none';
+  setDate();
+  cargarDatos();
+}
+</script>
+</body>
+</html>
