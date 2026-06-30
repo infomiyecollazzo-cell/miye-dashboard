@@ -460,6 +460,17 @@ function renderTablero(d) {
       <div class="kpi-card"><div class="kpi-label">Ventas brutas</div><div class="kpi-value">${ars(d.mes.bruto)}</div><div class="kpi-sub">ARS acumulado</div></div>
       <div class="kpi-card"><div class="kpi-label">Ingresos netos</div><div class="kpi-value green">${ars(d.mes.neto)}</div><div class="kpi-sub">después de comisiones</div></div>
       <div class="kpi-card"><div class="kpi-label">Órdenes del mes</div><div class="kpi-value blue">${d.mes.ordenes}</div><div class="kpi-sub">ticket prom. ${ars(d.mes.ticket)}</div></div>
+      <div class="kpi-card">
+        <div class="kpi-label">Artículos vendidos en el mes</div>
+        <div class="kpi-value blue">${(d.mes.articulos||0).toLocaleString("es-AR")}</div>
+        <div class="kpi-sub">unidades despachadas</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Objetivo Nueva Colección — 450 art.</div>
+        <div class="kpi-value ${(d.mes.articulos||0) >= 450 ? 'green' : 'orange'}">${(d.mes.articulos||0).toLocaleString("es-AR")} / 450</div>
+        <div class="progress-wrap"><div class="progress-bar" style="width:${Math.min(100,Math.round((d.mes.articulos||0)/450*100))}%;background:${(d.mes.articulos||0)>=450?'var(--green)':'var(--orange)'}"></div></div>
+        <div class="kpi-sub" style="margin-top:6px;">${Math.min(100,Math.round((d.mes.articulos||0)/450*100))}% del objetivo · faltan ${Math.max(0,450-(d.mes.articulos||0))} artículos</div>
+      </div>
       <div class="kpi-card"><div class="kpi-label">Proyección fin de mes</div><div class="kpi-value orange">${ars(d.mes.proyeccion)}</div><div class="progress-wrap"><div class="progress-bar" style="width:${porcMes}%"></div></div><div class="kpi-sub" style="margin-top:6px;">${porcMes}% del mes</div></div>
     </div>
 
