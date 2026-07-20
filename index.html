@@ -782,42 +782,63 @@ function renderFinanciero(d) {
 
 // ── FLUJO DE CAJA ──
 function renderFlujoCaja(d) {
-  const cf = d.flujoCaja || {};
-  const alertas   = cf.alertas  || [];
-  const dias      = cf.dias     || [];
-  const cuentas   = cf.cuentas  || {};
+  const sc  = d.saldosCuentas  || { cuentas:[], totalDisponible:0, totalPorAcreditar:0 };
+  const fp  = d.flujoProyectado || { movimientos:[], alertasRojo:[], alertasAmarillo:[] };
+  const cf  = d.flujoCaja || {};
+  const alertas = cf.alertas || [];
 
-  // Resumen totales
-  const totalEntradas = (cf.totalEntradasPN||0) + (cf.totalEntradasMP||0) + (cf.totalEntradasCheques||0);
+  const totalDisp  = sc.totalDisponible   || 0;
+  const totalAcred = sc.totalPorAcreditar || 0;
+  const totalLiquidez = totalDisp + totalAcred;
+
+  // Agrupar movimientos por fecha para la tabla
+  const movsPorFecha = {};
+  (fp.movimientos || []).forEach(m => {
+    if (!m.fecha) return;
+    if (!movsPorFecha[m.fecha]) movsPorFecha[m.fecha] = [];
+    movsPorFecha[m.fecha].push(m);
+  });
+
+  const colores = {
+    "BBVA Rafael":    "#1a4a7c",
+    "MP Valentina":   "#009ee3",
+    "MP Adair":       "#00b4d8",
+    "MP Guillermina": "#48cae4",
+    "GOcuotas":       "#4a1a7c",
+    "Variable":       "#854f0b",
+  };
 
   return `
-    <div class="section-header"><div><div class="section-title">Flujo de caja</div><div class="section-sub">Proyección 30 días · entradas por cuenta y salidas reales</div></div></div>
+    <div class="section-header"><div>
+      <div class="section-title">Flujo de Caja</div>
+      <div class="section-sub">Saldos reales por cuenta · Proyección 60 días</div>
+    </div></div>
 
-    <!-- KPIs resumen -->
-    <div class="kpi-grid kpi-grid-4 mb-16">
-      <div class="kpi-card">
-        <div class="kpi-label">Entradas Pago Nube (30d)</div>
-        <div class="kpi-value" style="color:#7c2d3e">${ars(cf.totalEntradasPN||0)}</div>
-        <div class="kpi-sub">BBVA Francés — Rafael Collazzo</div>
+    <!-- SALDOS POR CUENTA -->
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">💰 LIQUIDEZ ACTUAL POR CUENTA</div>
+    <div class="kpi-grid kpi-grid-3 mb-16">
+      ${sc.cuentas.map(c => `
+        <div class="kpi-card">
+          <div class="kpi-label">${c.cuenta}</div>
+          <div class="kpi-value" style="color:var(--green);font-size:18px">${ars(c.disponible)}</div>
+          ${c.porAcreditar > 0 ? `<div class="kpi-sub" style="color:var(--blue)">+ ${ars(c.porAcreditar)} por acreditar</div>` : '<div class="kpi-sub">—</div>'}
+        </div>`).join("")}
+    </div>
+
+    <!-- TOTAL LIQUIDEZ -->
+    <div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:18px 24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--text-muted)">Total liquidez disponible</div>
+        <div style="font-size:28px;font-weight:800;color:${totalDisp < 2000000 ? 'var(--red)' : 'var(--green)'};margin-top:4px">${ars(totalDisp)}</div>
       </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Entradas Mercado Pago (30d)</div>
-        <div class="kpi-value" style="color:#009ee3">${ars(cf.totalEntradasMP||0)}</div>
-        <div class="kpi-sub">MP Valentina Castaño</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Entradas GOcuotas (30d)</div>
-        <div class="kpi-value blue">${ars(cf.totalEntradasCheques||0)}</div>
-        <div class="kpi-sub">Echeq — Rafael Collazzo</div>
-      </div>
-      <div class="kpi-card">
-        <div class="kpi-label">Cheques a pagar (30d)</div>
-        <div class="kpi-value red">${ars(cf.totalSalidasCheques||0)}</div>
-        <div class="kpi-sub">compromisos pendientes</div>
+      <div style="text-align:right">
+        <div style="font-size:12px;color:var(--text-muted)">Por acreditar</div>
+        <div style="font-size:20px;font-weight:700;color:var(--blue)">${ars(totalAcred)}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">Total: ${ars(totalLiquidez)}</div>
       </div>
     </div>
 
-    <!-- Alerta cheques 7 días -->
+    <!-- ALERTAS CHEQUES 7 DIAS -->
     ${alertas.length > 0 ? `
     <div style="background:var(--red-light);border:1px solid #f0c0c0;border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;">
       <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:10px;">⚠️ CHEQUES A VENCER EN LOS PRÓXIMOS 7 DÍAS</div>
@@ -831,61 +852,57 @@ function renderFlujoCaja(d) {
       ✅ Sin cheques a vencer en los próximos 7 días
     </div>`}
 
-    <div class="divider"></div>
-
-    <!-- SECCIÓN POR CUENTA -->
-    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:14px;">💳 ENTRADAS PROYECTADAS POR CUENTA</div>
-
-    ${Object.entries(CUENTAS).map(([gw, info]) => {
-      const movs = (cuentas[gw] || []);
-      if (movs.length === 0) return "";
-      const total = movs.reduce((s, m) => s + m.monto, 0);
-      return `
-      <div class="cuenta-card">
-        <div class="cuenta-header" style="background:${info.bg}">
-          <div>
-            <div class="cuenta-nombre" style="color:${info.color}">${info.nombre}</div>
-            <div class="cuenta-gateway">${gw}</div>
-          </div>
-          <div class="cuenta-total" style="color:${info.color}">${ars(total)}</div>
-        </div>
-        <div class="cuenta-body">
-          ${movs.slice(0,15).map(m => `
-            <div class="cuenta-row">
-              <div class="cuenta-fecha">${m.fecha}</div>
-              <div class="cuenta-monto" style="color:${info.color}">${ars(m.monto)}</div>
-            </div>`).join("")}
-          ${movs.length > 15 ? `<div style="padding:8px 20px;font-size:11px;color:var(--text-muted)">+ ${movs.length - 15} entradas más...</div>` : ""}
-        </div>
-      </div>`;
-    }).join("")}
-
-    <div class="divider"></div>
-
-    <!-- TABLA DÍA A DÍA -->
-    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">PROYECCIÓN DÍA A DÍA — CONSOLIDADO</div>
-    <div class="card" style="overflow-x:auto;">
-      <div class="cf-row cf-header">
-        <div>Fecha</div>
-        <div style="text-align:right">Ent. PN</div>
-        <div style="text-align:right">Ent. MP</div>
-        <div style="text-align:right">Ent. Cheques</div>
-        <div style="text-align:right">Total entradas</div>
-        <div style="text-align:right">Cheques a pagar</div>
-        <div style="text-align:right">Gastos fijos</div>
-        <div style="text-align:right">Saldo del día</div>
-      </div>
-      ${dias.map(d2 => `
-        <div class="cf-row">
-          <div class="cf-cell date">${d2.fecha}</div>
-          <div class="cf-cell" style="color:#7c2d3e">${d2.entradaPN > 0 ? ars(d2.entradaPN) : "—"}</div>
-          <div class="cf-cell" style="color:#009ee3">${(d2.entradaMP||0) > 0 ? ars(d2.entradaMP) : "—"}</div>
-          <div class="cf-cell" style="color:var(--blue)">${d2.entradaCheques > 0 ? ars(d2.entradaCheques) : "—"}</div>
-          <div class="cf-cell" style="color:var(--text-primary);font-weight:600">${d2.totalEntradas > 0 ? ars(d2.totalEntradas) : "—"}</div>
-          <div class="cf-cell" style="color:var(--red)">${d2.salidaCheques > 0 ? ars(d2.salidaCheques) : "—"}</div>
-          <div class="cf-cell" style="color:var(--orange)">${ars(d2.salidaFijos)}</div>
-          <div class="cf-cell ${d2.saldo >= 0 ? 'cf-pos' : 'cf-neg'}">${ars(d2.saldo)}</div>
+    <!-- ALERTAS FLUJO PROYECTADO -->
+    ${fp.alertasRojo && fp.alertasRojo.length > 0 ? `
+    <div style="background:var(--red-light);border:1px solid #f0c0c0;border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:8px;">🚨 SALDO PROYECTADO NEGATIVO EN ESTAS FECHAS</div>
+      ${fp.alertasRojo.slice(0,5).map(m => `
+        <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f0c0c0;">
+          <span style="font-size:13px;font-weight:600;color:var(--red)">${m.fecha} — ${m.concepto}</span>
+          <span style="font-size:13px;font-weight:700;color:var(--red)">${ars(m.saldo)}</span>
         </div>`).join("")}
+    </div>` : ""}
+
+    ${fp.alertasAmarillo && fp.alertasAmarillo.length > 0 ? `
+    <div style="background:var(--orange-light);border:1px solid #f0d0a0;border-radius:var(--radius);padding:14px 20px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--orange);margin-bottom:6px;">⚠️ SALDO AJUSTADO (menos de $2M) EN ${fp.alertasAmarillo.length} FECHA/S</div>
+    </div>` : ""}
+
+    <div class="divider"></div>
+
+    <!-- PROYECCION DIA A DIA -->
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:10px;">📅 PROYECCIÓN DÍA A DÍA — 60 DÍAS</div>
+    <div class="card" style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead>
+          <tr style="background:#1a1a1a;color:#fff;">
+            <th style="padding:10px 12px;text-align:left;">Fecha</th>
+            <th style="padding:10px 12px;text-align:left;">Concepto</th>
+            <th style="padding:10px 12px;text-align:left;">Cuenta</th>
+            <th style="padding:10px 12px;text-align:right;">Entrada</th>
+            <th style="padding:10px 12px;text-align:right;">Salida</th>
+            <th style="padding:10px 12px;text-align:right;">Saldo</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${Object.keys(movsPorFecha).sort().map((fecha, fi) => {
+            const movs = movsPorFecha[fecha];
+            return movs.map((m, mi) => {
+              const ultimoDelDia = mi === movs.length - 1;
+              const saldoColor = m.saldo === null ? "" : m.saldo < 0 ? "color:var(--red);font-weight:700" : m.saldo < 2000000 ? "color:var(--orange);font-weight:700" : "color:var(--green);font-weight:700";
+              const bgRow = fi % 2 === 0 ? "#f9fbe7" : "#ffffff";
+              return `<tr style="background:${bgRow};border-bottom:1px solid var(--border);">
+                <td style="padding:7px 12px;color:var(--text-secondary);font-weight:${mi===0?'700':'400'}">${mi===0 ? fecha : ""}</td>
+                <td style="padding:7px 12px;">${m.concepto}</td>
+                <td style="padding:7px 12px;color:${colores[m.cuenta]||'var(--text-muted)'};font-size:11px;">${m.cuenta}</td>
+                <td style="padding:7px 12px;text-align:right;color:var(--green);font-weight:600">${m.entrada > 0 ? ars(m.entrada) : "—"}</td>
+                <td style="padding:7px 12px;text-align:right;color:var(--red);font-weight:600">${m.salida > 0 ? ars(m.salida) : "—"}</td>
+                <td style="padding:7px 12px;text-align:right;${ultimoDelDia ? saldoColor : 'color:var(--text-muted)'}">${ultimoDelDia && m.saldo !== null ? ars(m.saldo) : ""}</td>
+              </tr>`;
+            }).join("");
+          }).join("")}
+        </tbody>
+      </table>
     </div>
   `;
 }
