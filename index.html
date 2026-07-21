@@ -356,7 +356,7 @@
 </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbz7I-yA569zz09ZnEKpDQMZapbDz1tBRPHizYG1E3OSwC17cGJ4o3N1zvvNmc_PzhdEjw/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbw7PuEmdNmaAh8IQCrUEM_oGcRk5ePhrjiPAt5idw3vJ52mO0ULMWV3U8asuM-qyNqmcg/exec";
 
 let DATA = null;
 let CURRENT_TAB = 'tablero';
@@ -774,6 +774,7 @@ function renderFinanciero(d) {
           <tr class="row-result"><td>⭐ Resultado operativo</td>${meses.slice(-6).map(m=>`<td>${ars(m.resultadoOperativo)}</td>`).join("")}</tr>
           <tr><td style="padding-left:24px;color:var(--purple)">Retiros de dueños</td>${meses.slice(-6).map(m=>`<td style="color:var(--purple)">(${ars(m.retirosDuenos)})</td>`).join("")}</tr>
           <tr class="row-final"><td>💎 Resultado final</td>${meses.slice(-6).map(m=>`<td>${ars(m.resultadoFinal)}</td>`).join("")}</tr>
+          <tr class="row-final" style="background:var(--purple-light);"><td>📊 Saldo acumulado</td>${meses.slice(-6).map(m=>`<td style="color:${(m.saldoAcumulado||0) < 0 ? 'var(--red)' : 'var(--purple)'}">${ars(m.saldoAcumulado||0)}</td>`).join("")}</tr>
         </tbody>
       </table>
     </div>
