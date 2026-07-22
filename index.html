@@ -637,9 +637,22 @@ function renderStock(d) {
   const stockBajo  = d.stockBajo   || [];  // 1-6 uds
   const stockTop10 = d.stockTop5   || [];  // top 10 mayor stock
   const sinStock   = d.stockSinStock || []; // 0 uds categoría Nueva Coleccion
+  const val        = d.valorizacionStock || { totalUnidades:0, totalValorizado:0, modelosSinCosto:0 };
 
   return `
     <div class="section-header"><div><div class="section-title">Stock y alertas</div><div class="section-sub">Inventario actual con alertas de reposición</div></div></div>
+
+    <div style="background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:18px 24px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+      <div>
+        <div style="font-size:12px;font-weight:700;text-transform:uppercase;color:var(--text-muted)">Valor total del stock</div>
+        <div style="font-size:28px;font-weight:800;color:var(--green);margin-top:4px">${ars(val.totalValorizado)}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:12px;color:var(--text-muted)">Unidades totales</div>
+        <div style="font-size:20px;font-weight:700;color:var(--blue)">${val.totalUnidades.toLocaleString("es-AR")}</div>
+        ${val.modelosSinCosto > 0 ? `<div style="font-size:11px;color:var(--orange);margin-top:2px">${val.modelosSinCosto} modelos con stock sin costo cargado</div>` : ""}
+      </div>
+    </div>
 
     <div class="kpi-grid kpi-grid-2 mb-16">
       <div class="kpi-card">
@@ -771,6 +784,7 @@ function renderFinanciero(d) {
           <tr><td style="padding-left:24px;color:var(--text-muted)">Gastos fijos</td>${meses.slice(-6).map(m=>`<td style="color:var(--text-secondary)">(${ars(m.gastosFijos)})</td>`).join("")}</tr>
           <tr><td style="padding-left:24px;color:var(--text-muted)">Pauta Meta</td>${meses.slice(-6).map(m=>`<td style="color:var(--text-secondary)">(${ars(m.pautaMeta)})</td>`).join("")}</tr>
           <tr><td style="padding-left:24px;color:var(--text-muted)">Gastos variables</td>${meses.slice(-6).map(m=>`<td style="color:var(--text-secondary)">(${ars(m.gastosVariables)})</td>`).join("")}</tr>
+          <tr><td style="padding-left:24px;color:var(--text-muted)">Impuestos y comisiones bancarias (BBVA + Galicia)</td>${meses.slice(-6).map(m=>`<td style="color:var(--text-secondary)">(${ars(m.gastosBancoBBVA||0)})</td>`).join("")}</tr>
           <tr class="row-result"><td>⭐ Resultado operativo</td>${meses.slice(-6).map(m=>`<td>${ars(m.resultadoOperativo)}</td>`).join("")}</tr>
           <tr><td style="padding-left:24px;color:var(--purple)">Retiros de dueños</td>${meses.slice(-6).map(m=>`<td style="color:var(--purple)">(${ars(m.retirosDuenos)})</td>`).join("")}</tr>
           <tr class="row-final"><td>💎 Resultado final</td>${meses.slice(-6).map(m=>`<td>${ars(m.resultadoFinal)}</td>`).join("")}</tr>
